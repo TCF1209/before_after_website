@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuoCode Technology</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ========== RESET & BASE ========== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: Arial, 'Times New Roman', serif;
+            background: #e0e0e0;
+            color: #555555;
+            transition: background 0.4s, color 0.4s;
+            overflow-x: hidden;
+        }
+
+        /* ========== TOGGLE BUTTON ========== */
+        .toggle-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 6px 12px;
+            border-radius: 50px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            transition: background 0.4s, box-shadow 0.4s;
+        }
+
+        body.after-mode .toggle-container {
+            background: rgba(10, 22, 40, 0.85);
+            box-shadow: 0 2px 20px rgba(0, 212, 170, 0.3);
+        }
+
+        .toggle-label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #555;
+            transition: color 0.3s;
+        }
+
+        body.after-mode .toggle-label {
+            color: #aaa;
+        }
+
+        body.after-mode .toggle-label.active {
+            color: #00D4AA;
+        }
+
+        .toggle-label.active { color: #333; }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: #bbb;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.on { background: #00D4AA; }
+
+        .toggle-switch .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.on .toggle-knob { transform: translateX(24px); }
+
+        /* ========== TRANSITION FLASH OVERLAY ========== */
+        .flash-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        /* ========== CANVAS ========== */
+        #dragon-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            display: none;
+        }
+
+        body.after-mode #dragon-canvas { display: block; }
+
+        /* ========== NAVBAR ========== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 40px;
+            background: #d0d0d0;
+            border-bottom: 1px solid #bbbbbb;
+            transition: all 0.4s;
+        }
+
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.4s;
+        }
+
+        .navbar .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 28px;
+        }
+
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: #555;
+            font-size: 15px;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        /* ========== HERO ========== */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 60px 20px;
+            position: relative;
+            z-index: 1;
+            transition: min-height 0.4s;
+        }
+
+        .hero h1 {
+            font-size: 36px;
+            color: #555;
+            margin-bottom: 16px;
+            transition: all 0.4s;
+        }
+
+        .hero p {
+            font-size: 16px;
+            color: #777;
+            margin-bottom: 30px;
+            max-width: 500px;
+            transition: all 0.4s;
+        }
+
+        .hero .btn-group {
+            display: flex;
+            gap: 16px;
+        }
+
+        .hero .btn {
+            padding: 12px 28px;
+            border: 1px solid #bbbbbb;
+            background: #d0d0d0;
+            color: #555;
+            font-size: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .hero .btn-secondary { display: none; }
+
+        .scroll-arrow {
+            display: none;
+            margin-top: 40px;
+        }
+
+        /* ========== SERVICES ========== */
+        .services {
+            padding: 60px 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .services .section-title {
+            text-align: center;
+            font-size: 28px;
+            color: #555;
+            margin-bottom: 40px;
+            transition: all 0.4s;
+        }
+
+        .services .cards {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .services .card {
+            background: #d5d5d5;
+            border: 1px solid #bbbbbb;
+            padding: 30px 24px;
+            width: 300px;
+            text-align: center;
+            transition: all 0.4s;
+        }
+
+        .services .card .card-icon {
+            font-size: 36px;
+            margin-bottom: 16px;
+            display: block;
+            color: #888;
+            transition: all 0.4s;
+        }
+
+        .services .card h3 {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 10px;
+            transition: all 0.4s;
+        }
+
+        .services .card p {
+            font-size: 14px;
+            color: #777;
+            line-height: 1.5;
+            transition: all 0.4s;
+        }
+
+        /* ========== ABOUT ========== */
+        .about {
+            padding: 60px 40px;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+
+        .about .visual {
+            width: 280px;
+            height: 280px;
+            background: #ccc;
+            border: 1px solid #bbbbbb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #999;
+            transition: all 0.4s;
+        }
+
+        .about .text {
+            max-width: 480px;
+        }
+
+        .about .text h2 {
+            font-size: 26px;
+            color: #555;
+            margin-bottom: 16px;
+            transition: all 0.4s;
+        }
+
+        .about .text p {
+            font-size: 15px;
+            color: #777;
+            line-height: 1.7;
+            transition: all 0.4s;
+        }
+
+        /* ========== FOOTER ========== */
+        .footer {
+            padding: 30px 40px;
+            text-align: center;
+            background: #d0d0d0;
+            border-top: 1px solid #bbbbbb;
+            position: relative;
+            z-index: 1;
+            transition: all 0.4s;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: #777;
+            transition: all 0.4s;
+        }
+
+        .footer .tagline {
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .footer .socials {
+            display: none;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+
+        .footer .socials a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        /* ==========================================================
+           AFTER MODE STYLES
+           ========================================================== */
+        body.after-mode {
+            font-family: 'Inter', sans-serif;
+            background: #0a1628;
+            color: #e0e0e0;
+        }
+
+        /* Navbar */
+        body.after-mode .navbar {
+            background: rgba(10, 22, 40, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        body.after-mode .navbar .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 22px;
+            background: linear-gradient(135deg, #00D4AA, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        body.after-mode .navbar .nav-links a {
+            color: #ccc;
+        }
+
+        body.after-mode .navbar .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: #00D4AA;
+            transition: width 0.3s;
+        }
+
+        body.after-mode .navbar .nav-links a:hover {
+            color: #00D4AA;
+        }
+
+        body.after-mode .navbar .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero */
+        body.after-mode .hero {
+            min-height: 100vh;
+        }
+
+        body.after-mode .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 52px;
+            background: linear-gradient(135deg, #00D4AA, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        body.after-mode .hero p {
+            color: #bbb;
+            font-size: 18px;
+            max-width: 600px;
+        }
+
+        body.after-mode .hero .btn {
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        body.after-mode .hero .btn:first-child {
+            background: #00D4AA;
+            color: #0a1628;
+            box-shadow: 0 0 0px rgba(0, 212, 170, 0);
+        }
+
+        body.after-mode .hero .btn:first-child:hover {
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+            background: linear-gradient(135deg, #00D4AA, #00e6b8);
+        }
+
+        body.after-mode .hero .btn-secondary {
+            display: inline-block;
+            background: transparent;
+            border: 1.5px solid #00D4AA;
+            color: #00D4AA;
+        }
+
+        body.after-mode .hero .btn-secondary:hover {
+            background: rgba(0, 212, 170, 0.1);
+        }
+
+        body.after-mode .scroll-arrow {
+            display: block;
+            color: #00D4AA;
+            font-size: 28px;
+            animation: bounceArrow 2s infinite;
+        }
+
+        @keyframes bounceArrow {
+            0%, 100% { transform: translateY(0); opacity: 0.6; }
+            50% { transform: translateY(10px); opacity: 1; }
+        }
+
+        /* Services */
+        body.after-mode .services .section-title {
+            font-family: 'Cinzel', serif;
+            color: #fff;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        body.after-mode .services .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background: #FFD700;
+            margin: 10px auto 0;
+            border-radius: 2px;
+        }
+
+        body.after-mode .services .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 16px;
+            transform: translateY(40px);
+            opacity: 0;
+            transition: transform 0.6s ease-out, opacity 0.6s ease-out, box-shadow 0.3s;
+        }
+
+        body.after-mode .services .card.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        body.after-mode .services .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(255, 215, 0, 0.15);
+        }
+
+        body.after-mode .services .card .card-icon {
+            color: #00D4AA;
+            font-size: 42px;
+            filter: drop-shadow(0 0 8px rgba(0, 212, 170, 0.5));
+        }
+
+        body.after-mode .services .card h3 {
+            color: #fff;
+            font-family: 'Cinzel', serif;
+        }
+
+        body.after-mode .services .card p {
+            color: #aaa;
+        }
+
+        /* About */
+        body.after-mode .about .visual {
+            background: transparent;
+            border: 2px solid rgba(0, 212, 170, 0.3);
+            border-radius: 50%;
+            position: relative;
+            animation: pulseRing 3s ease-in-out infinite;
+            color: #00D4AA;
+            font-size: 48px;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+        }
+
+        @keyframes pulseRing {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.2), inset 0 0 20px rgba(0, 212, 170, 0.1); }
+            50% { box-shadow: 0 0 40px rgba(0, 212, 170, 0.4), inset 0 0 40px rgba(0, 212, 170, 0.2); }
+        }
+
+        body.after-mode .about .text h2 {
+            font-family: 'Cinzel', serif;
+            color: #fff;
+        }
+
+        body.after-mode .about .text p {
+            color: #bbb;
+        }
+
+        body.after-mode .about .visual,
+        body.after-mode .about .text {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        body.after-mode .about .visual.visible,
+        body.after-mode .about .text.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Footer */
+        body.after-mode .footer {
+            background: rgba(10, 22, 40, 0.95);
+            border-top: 2px solid #00D4AA;
+        }
+
+        body.after-mode .footer p { color: #bbb; }
+
+        body.after-mode .footer .tagline {
+            display: block;
+            color: #888;
+            font-style: italic;
+        }
+
+        body.after-mode .footer .socials {
+            display: flex;
+        }
+
+        body.after-mode .footer .socials a {
+            background: rgba(0, 212, 170, 0.15);
+            border: 1px solid rgba(0, 212, 170, 0.3);
+        }
+
+        body.after-mode .footer .socials a:hover {
+            background: rgba(0, 212, 170, 0.3);
+            box-shadow: 0 0 12px rgba(0, 212, 170, 0.4);
+        }
+
+        body.after-mode .footer .socials svg {
+            fill: #00D4AA;
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOGGLE -->
+    <div class="toggle-container">
+        <span class="toggle-label active" id="label-before">BEFORE</span>
+        <div class="toggle-switch" id="toggle" onclick="toggleMode()">
+            <div class="toggle-knob"></div>
+        </div>
+        <span class="toggle-label" id="label-after">AFTER</span>
+    </div>
+
+    <!-- FLASH OVERLAY -->
+    <div class="flash-overlay" id="flash-overlay"></div>
+
+    <!-- DRAGON CANVAS -->
+    <canvas id="dragon-canvas"></canvas>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo">DuoCode Technology</div>
+        <ul class="nav-links">
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#footer">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="hero">
+        <h1>Welcome to DuoCode Technology</h1>
+        <p>We build websites for your business.</p>
+        <div class="btn-group">
+            <a href="#footer" class="btn">Contact Us</a>
+            <a href="#services" class="btn btn-secondary">See Our Work</a>
+        </div>
+        <div class="scroll-arrow">&#8595;</div>
+    </section>
+
+    <!-- SERVICES -->
+    <section class="services" id="services">
+        <h2 class="section-title">Our Services</h2>
+        <div class="cards">
+            <div class="card">
+                <span class="card-icon">&#9881;</span>
+                <h3>Web Design</h3>
+                <p>We design websites that capture your brand identity and engage your audience with modern aesthetics.</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">&#9000;</span>
+                <h3>Web Development</h3>
+                <p>Custom-built, high-performance websites using the latest technologies for speed and reliability.</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">&#9733;</span>
+                <h3>Digital Solutions</h3>
+                <p>End-to-end digital strategies including SEO, analytics, and online marketing to grow your business.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="about" id="about">
+        <div class="visual">
+            <span>&lt;/&gt;</span>
+        </div>
+        <div class="text">
+            <h2>About DuoCode</h2>
+            <p>We are a Malaysian digital agency helping SMEs grow their online presence with modern, high-performance websites. Our team combines creative design with technical excellence to deliver websites that don't just look good — they work hard for your business.</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="footer">
+        <p>DuoCode Technology &copy; 2025</p>
+        <p class="tagline">Empowering Malaysian SMEs, One Website at a Time.</p>
+        <div class="socials">
+            <a href="#" aria-label="Facebook">
+                <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            </a>
+            <a href="#" aria-label="Instagram">
+                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="#00D4AA" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#00D4AA" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
+            </a>
+        </div>
+    </footer>
+
+    <script>
+        /* ========== TOGGLE LOGIC ========== */
+        let isAfterMode = false;
+        let animationId = null;
+
+        function toggleMode() {
+            isAfterMode = !isAfterMode;
+            const toggle = document.getElementById('toggle');
+            const labelBefore = document.getElementById('label-before');
+            const labelAfter = document.getElementById('label-after');
+
+            if (isAfterMode) {
+                // Flash transition: Before → After
+                flashTransition(() => {
+                    document.body.classList.add('after-mode');
+                    toggle.classList.add('on');
+                    labelBefore.classList.remove('active');
+                    labelAfter.classList.add('active');
+                    updateHeroText(true);
+                    startDragon();
+                    observeSections();
+                });
+            } else {
+                // Fade transition: After → Before
+                document.body.classList.remove('after-mode');
+                toggle.classList.remove('on');
+                labelAfter.classList.remove('active');
+                labelBefore.classList.add('active');
+                updateHeroText(false);
+                stopDragon();
+                resetCards();
+            }
+        }
+
+        function updateHeroText(after) {
+            const h1 = document.querySelector('.hero h1');
+            const p = document.querySelector('.hero p');
+            const btn = document.querySelector('.hero .btn');
+            if (after) {
+                h1.textContent = 'Transform Your Business Online';
+                p.textContent = "DuoCode builds websites that don't just look good — they work hard for your business.";
+                btn.textContent = 'Get Started';
+            } else {
+                h1.textContent = 'Welcome to DuoCode Technology';
+                p.textContent = 'We build websites for your business.';
+                btn.textContent = 'Contact Us';
+            }
+        }
+
+        /* ========== FLASH TRANSITION ========== */
+        function flashTransition(callback) {
+            const overlay = document.getElementById('flash-overlay');
+            const toggle = document.getElementById('toggle');
+            const rect = toggle.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            overlay.style.background = `radial-gradient(circle at ${cx}px ${cy}px, rgba(255,215,0,0.9), rgba(255,255,255,0.8) 40%, transparent 70%)`;
+            overlay.style.transition = 'none';
+            overlay.style.opacity = '0';
+
+            requestAnimationFrame(() => {
+                overlay.style.transition = 'opacity 0.15s ease-in';
+                overlay.style.opacity = '1';
+
+                setTimeout(() => {
+                    callback();
+                    overlay.style.transition = 'opacity 0.45s ease-out';
+                    overlay.style.opacity = '0';
+                }, 150);
+            });
+        }
+
+        /* ========== INTERSECTION OBSERVER ========== */
+        function observeSections() {
+            const cards = document.querySelectorAll('.services .card');
+            const aboutEls = document.querySelectorAll('.about .visual, .about .text');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, i) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => entry.target.classList.add('visible'), i * 150);
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            cards.forEach(card => observer.observe(card));
+            aboutEls.forEach(el => observer.observe(el));
+        }
+
+        function resetCards() {
+            document.querySelectorAll('.card, .about .visual, .about .text').forEach(el => {
+                el.classList.remove('visible');
+            });
+        }
+
+        /* ========== DRAGON CANVAS ANIMATION ========== */
+        const canvas = document.getElementById('dragon-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Dragon state
+        const dragon = {
+            nodes: [],
+            nodeCount: 70,
+            time: 0,
+            speed: 0.008
+        };
+
+        // Ambient particles
+        const ambientParticles = [];
+        const AMBIENT_COUNT = 65;
+
+        function initAmbientParticles() {
+            ambientParticles.length = 0;
+            for (let i = 0; i < AMBIENT_COUNT; i++) {
+                ambientParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2.5 + 0.5,
+                    speedY: -(Math.random() * 0.4 + 0.1),
+                    speedX: (Math.random() - 0.5) * 0.2,
+                    opacity: Math.random() * 0.6 + 0.2
+                });
+            }
+        }
+
+        function getDragonPosition(t) {
+            // Sinuous S-curve path across the screen
+            const x = ((t % 1) + 1) % 1 * (canvas.width + 400) - 200;
+            const baseY = canvas.height * 0.45;
+            const y = baseY + Math.sin(t * Math.PI * 4) * (canvas.height * 0.18)
+                             + Math.sin(t * Math.PI * 7) * (canvas.height * 0.06);
+            return { x, y };
+        }
+
+        function updateDragon() {
+            dragon.time += dragon.speed;
+
+            dragon.nodes = [];
+            for (let i = 0; i < dragon.nodeCount; i++) {
+                const offset = i * 0.012;
+                const pos = getDragonPosition(dragon.time - offset);
+                dragon.nodes.push(pos);
+            }
+        }
+
+        function drawDragon() {
+            const nodes = dragon.nodes;
+            if (nodes.length === 0) return;
+
+            for (let i = nodes.length - 1; i >= 0; i--) {
+                const node = nodes[i];
+                const progress = 1 - i / nodes.length; // 1 at head, 0 at tail
+                const size = 3 + progress * 8;
+                const alpha = 0.1 + progress * 0.7;
+
+                // Teal glow
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, size + 4, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 212, 170, ${alpha * 0.25})`;
+                ctx.fill();
+
+                // Teal body
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 212, 170, ${alpha})`;
+                ctx.fill();
+
+                // Gold core
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, size * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
+                ctx.fill();
+            }
+
+            // Head extra glow
+            const head = nodes[0];
+            const gradient = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 30);
+            gradient.addColorStop(0, 'rgba(0, 212, 170, 0.4)');
+            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.15)');
+            gradient.addColorStop(1, 'rgba(0, 212, 170, 0)');
+            ctx.beginPath();
+            ctx.arc(head.x, head.y, 30, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        function updateAmbientParticles() {
+            ambientParticles.forEach(p => {
+                p.y += p.speedY;
+                p.x += p.speedX;
+                if (p.y < -10) {
+                    p.y = canvas.height + 10;
+                    p.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        function drawAmbientParticles() {
+            ambientParticles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 215, 0, ${p.opacity})`;
+                ctx.fill();
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            updateAmbientParticles();
+            drawAmbientParticles();
+
+            updateDragon();
+            drawDragon();
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function startDragon() {
+            if (animationId) return;
+            resizeCanvas();
+            initAmbientParticles();
+            animate();
+        }
+
+        function stopDragon() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+    </script>
+</body>
+</html>
