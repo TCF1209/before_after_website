@@ -6,894 +6,323 @@
     <title>DuoCode Technology</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* ========== RESET & BASE ========== */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
+        body { font-family: Arial, 'Times New Roman', serif; overflow-x: hidden; }
 
-        body {
-            font-family: Arial, 'Times New Roman', serif;
-            background: #e0e0e0;
-            color: #555555;
-            transition: background 0.4s, color 0.4s;
-            overflow-x: hidden;
+        /* ========== 3D FLIP ========== */
+        .perspective-wrapper { perspective: 2000px; min-height: 100vh; }
+        .flip-container {
+            position: relative; width: 100%; min-height: 100vh;
+            transform-style: preserve-3d;
+            transition: transform 1.2s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
+        .flip-container.flipped { transform: rotateY(180deg); }
+        .face { width: 100%; min-height: 100vh; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .face-before { position: relative; z-index: 2; background: #e0e0e0; color: #555; }
+        .face-after { position: absolute; top: 0; left: 0; z-index: 1; transform: rotateY(180deg); background: #0a1628; color: #e0e0e0; font-family: 'Inter', sans-serif; }
 
-        /* ========== TOGGLE BUTTON ========== */
-        .toggle-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.9);
-            padding: 6px 12px;
-            border-radius: 50px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-            transition: background 0.4s, box-shadow 0.4s;
-        }
-
-        body.after-mode .toggle-container {
-            background: rgba(10, 22, 40, 0.85);
-            box-shadow: 0 2px 20px rgba(0, 212, 170, 0.3);
-        }
-
-        .toggle-label {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: #555;
-            transition: color 0.3s;
-        }
-
-        body.after-mode .toggle-label {
-            color: #aaa;
-        }
-
-        body.after-mode .toggle-label.active {
-            color: #00D4AA;
-        }
-
+        /* ========== TOGGLE ========== */
+        .toggle-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.9); padding: 6px 12px; border-radius: 50px; box-shadow: 0 2px 12px rgba(0,0,0,0.15); transition: background 0.4s, box-shadow 0.4s; }
+        .toggle-container.on { background: rgba(10,22,40,0.85); box-shadow: 0 2px 20px rgba(0,212,170,0.3); }
+        .toggle-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #555; transition: color 0.3s; }
+        .toggle-container.on .toggle-label { color: #aaa; }
+        .toggle-container.on .toggle-label.active { color: #00D4AA; }
         .toggle-label.active { color: #333; }
-
-        .toggle-switch {
-            position: relative;
-            width: 52px;
-            height: 28px;
-            background: #bbb;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
+        .toggle-switch { position: relative; width: 52px; height: 28px; background: #bbb; border-radius: 14px; cursor: pointer; transition: background 0.3s; }
         .toggle-switch.on { background: #00D4AA; }
-
-        .toggle-switch .toggle-knob {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 22px;
-            height: 22px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform 0.3s;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        }
-
+        .toggle-switch .toggle-knob { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: #fff; border-radius: 50%; transition: transform 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
         .toggle-switch.on .toggle-knob { transform: translateX(24px); }
 
-        /* ========== TRANSITION FLASH OVERLAY ========== */
-        .flash-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 9999;
-            pointer-events: none;
-            opacity: 0;
-        }
-
-        /* ========== CANVAS ========== */
-        #dragon-canvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 0;
-            display: none;
-        }
-
-        body.after-mode #dragon-canvas { display: block; }
-
-        /* ========== NAVBAR ========== */
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 40px;
-            background: #d0d0d0;
-            border-bottom: 1px solid #bbbbbb;
-            transition: all 0.4s;
-        }
-
-        .navbar .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: #555;
-            transition: all 0.4s;
-        }
-
-        .navbar .nav-links {
-            list-style: none;
-            display: flex;
-            gap: 28px;
-        }
-
-        .navbar .nav-links a {
-            text-decoration: none;
-            color: #555;
-            font-size: 15px;
-            position: relative;
-            transition: color 0.3s;
-        }
-
-        /* ========== HERO ========== */
-        .hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 80vh;
-            text-align: center;
-            padding: 60px 20px;
-            position: relative;
-            z-index: 1;
-            transition: min-height 0.4s;
-        }
-
-        .hero h1 {
-            font-size: 36px;
-            color: #555;
-            margin-bottom: 16px;
-            transition: all 0.4s;
-        }
-
-        .hero p {
-            font-size: 16px;
-            color: #777;
-            margin-bottom: 30px;
-            max-width: 500px;
-            transition: all 0.4s;
-        }
-
-        .hero .btn-group {
-            display: flex;
-            gap: 16px;
-        }
-
-        .hero .btn {
-            padding: 12px 28px;
-            border: 1px solid #bbbbbb;
-            background: #d0d0d0;
-            color: #555;
-            font-size: 15px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .hero .btn-secondary { display: none; }
-
-        .scroll-arrow {
-            display: none;
-            margin-top: 40px;
-        }
-
-        /* ========== SERVICES ========== */
-        .services {
-            padding: 60px 40px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .services .section-title {
-            text-align: center;
-            font-size: 28px;
-            color: #555;
-            margin-bottom: 40px;
-            transition: all 0.4s;
-        }
-
-        .services .cards {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .services .card {
-            background: #d5d5d5;
-            border: 1px solid #bbbbbb;
-            padding: 30px 24px;
-            width: 300px;
-            text-align: center;
-            transition: all 0.4s;
-        }
-
-        .services .card .card-icon {
-            font-size: 36px;
-            margin-bottom: 16px;
-            display: block;
-            color: #888;
-            transition: all 0.4s;
-        }
-
-        .services .card h3 {
-            font-size: 18px;
-            color: #555;
-            margin-bottom: 10px;
-            transition: all 0.4s;
-        }
-
-        .services .card p {
-            font-size: 14px;
-            color: #777;
-            line-height: 1.5;
-            transition: all 0.4s;
-        }
-
-        /* ========== ABOUT ========== */
-        .about {
-            padding: 60px 40px;
-            display: flex;
-            gap: 40px;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            z-index: 1;
-            flex-wrap: wrap;
-        }
-
-        .about .visual {
-            width: 280px;
-            height: 280px;
-            background: #ccc;
-            border: 1px solid #bbbbbb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            color: #999;
-            transition: all 0.4s;
-        }
-
-        .about .text {
-            max-width: 480px;
-        }
-
-        .about .text h2 {
-            font-size: 26px;
-            color: #555;
-            margin-bottom: 16px;
-            transition: all 0.4s;
-        }
-
-        .about .text p {
-            font-size: 15px;
-            color: #777;
-            line-height: 1.7;
-            transition: all 0.4s;
-        }
-
-        /* ========== FOOTER ========== */
-        .footer {
-            padding: 30px 40px;
-            text-align: center;
-            background: #d0d0d0;
-            border-top: 1px solid #bbbbbb;
-            position: relative;
-            z-index: 1;
-            transition: all 0.4s;
-        }
-
-        .footer p {
-            font-size: 13px;
-            color: #777;
-            transition: all 0.4s;
-        }
-
-        .footer .tagline {
-            font-size: 12px;
-            margin-top: 6px;
-            display: none;
-        }
-
-        .footer .socials {
-            display: none;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 12px;
-        }
-
-        .footer .socials a {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        /* ==========================================================
-           AFTER MODE STYLES
-           ========================================================== */
-        body.after-mode {
-            font-family: 'Inter', sans-serif;
-            background: #0a1628;
-            color: #e0e0e0;
-        }
-
-        /* Navbar */
-        body.after-mode .navbar {
-            background: rgba(10, 22, 40, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-        }
-
-        body.after-mode .navbar .logo {
-            font-family: 'Cinzel', serif;
-            font-size: 22px;
-            background: linear-gradient(135deg, #00D4AA, #FFD700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        body.after-mode .navbar .nav-links a {
-            color: #ccc;
-        }
-
-        body.after-mode .navbar .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0%;
-            height: 2px;
-            background: #00D4AA;
-            transition: width 0.3s;
-        }
-
-        body.after-mode .navbar .nav-links a:hover {
-            color: #00D4AA;
-        }
-
-        body.after-mode .navbar .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        /* Hero */
-        body.after-mode .hero {
-            min-height: 100vh;
-        }
-
-        body.after-mode .hero h1 {
-            font-family: 'Cinzel', serif;
-            font-size: 52px;
-            background: linear-gradient(135deg, #00D4AA, #FFD700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.2;
-        }
-
-        body.after-mode .hero p {
-            color: #bbb;
-            font-size: 18px;
-            max-width: 600px;
-        }
-
-        body.after-mode .hero .btn {
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        body.after-mode .hero .btn:first-child {
-            background: #00D4AA;
-            color: #0a1628;
-            box-shadow: 0 0 0px rgba(0, 212, 170, 0);
-        }
-
-        body.after-mode .hero .btn:first-child:hover {
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-            background: linear-gradient(135deg, #00D4AA, #00e6b8);
-        }
-
-        body.after-mode .hero .btn-secondary {
-            display: inline-block;
-            background: transparent;
-            border: 1.5px solid #00D4AA;
-            color: #00D4AA;
-        }
-
-        body.after-mode .hero .btn-secondary:hover {
-            background: rgba(0, 212, 170, 0.1);
-        }
-
-        body.after-mode .scroll-arrow {
-            display: block;
-            color: #00D4AA;
-            font-size: 28px;
-            animation: bounceArrow 2s infinite;
-        }
-
-        @keyframes bounceArrow {
-            0%, 100% { transform: translateY(0); opacity: 0.6; }
-            50% { transform: translateY(10px); opacity: 1; }
-        }
-
-        /* Services */
-        body.after-mode .services .section-title {
-            font-family: 'Cinzel', serif;
-            color: #fff;
-            position: relative;
-            display: inline-block;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        body.after-mode .services .section-title::after {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 3px;
-            background: #FFD700;
-            margin: 10px auto 0;
-            border-radius: 2px;
-        }
-
-        body.after-mode .services .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 16px;
-            transform: translateY(40px);
-            opacity: 0;
-            transition: transform 0.6s ease-out, opacity 0.6s ease-out, box-shadow 0.3s;
-        }
-
-        body.after-mode .services .card.visible {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        body.after-mode .services .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(255, 215, 0, 0.15);
-        }
-
-        body.after-mode .services .card .card-icon {
-            color: #00D4AA;
-            font-size: 42px;
-            filter: drop-shadow(0 0 8px rgba(0, 212, 170, 0.5));
-        }
-
-        body.after-mode .services .card h3 {
-            color: #fff;
-            font-family: 'Cinzel', serif;
-        }
-
-        body.after-mode .services .card p {
-            color: #aaa;
-        }
-
-        /* About */
-        body.after-mode .about .visual {
-            background: transparent;
-            border: 2px solid rgba(0, 212, 170, 0.3);
-            border-radius: 50%;
-            position: relative;
-            animation: pulseRing 3s ease-in-out infinite;
-            color: #00D4AA;
-            font-size: 48px;
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-        }
-
-        @keyframes pulseRing {
-            0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.2), inset 0 0 20px rgba(0, 212, 170, 0.1); }
-            50% { box-shadow: 0 0 40px rgba(0, 212, 170, 0.4), inset 0 0 40px rgba(0, 212, 170, 0.2); }
-        }
-
-        body.after-mode .about .text h2 {
-            font-family: 'Cinzel', serif;
-            color: #fff;
-        }
-
-        body.after-mode .about .text p {
-            color: #bbb;
-        }
-
-        body.after-mode .about .visual,
-        body.after-mode .about .text {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-        }
-
-        body.after-mode .about .visual.visible,
-        body.after-mode .about .text.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Footer */
-        body.after-mode .footer {
-            background: rgba(10, 22, 40, 0.95);
-            border-top: 2px solid #00D4AA;
-        }
-
-        body.after-mode .footer p { color: #bbb; }
-
-        body.after-mode .footer .tagline {
-            display: block;
-            color: #888;
-            font-style: italic;
-        }
-
-        body.after-mode .footer .socials {
-            display: flex;
-        }
-
-        body.after-mode .footer .socials a {
-            background: rgba(0, 212, 170, 0.15);
-            border: 1px solid rgba(0, 212, 170, 0.3);
-        }
-
-        body.after-mode .footer .socials a:hover {
-            background: rgba(0, 212, 170, 0.3);
-            box-shadow: 0 0 12px rgba(0, 212, 170, 0.4);
-        }
-
-        body.after-mode .footer .socials svg {
-            fill: #00D4AA;
-            width: 18px;
-            height: 18px;
-        }
+        /* ========== CANVAS (After bg) ========== */
+        #fx-canvas { position: absolute; top: 0; left: 0; width: 100%; bottom: 0; z-index: 0; }
+
+        /* ========== BEFORE FACE ========== */
+        .face-before .navbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #d0d0d0; border-bottom: 1px solid #bbb; }
+        .face-before .logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: bold; color: #555; }
+        .face-before .logo img { height: 36px; filter: grayscale(100%); }
+        .face-before .nav-links { list-style: none; display: flex; gap: 28px; }
+        .face-before .nav-links a { text-decoration: none; color: #555; font-size: 15px; }
+        .face-before .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; padding: 60px 20px; }
+        .face-before .hero h1 { font-size: 36px; color: #555; margin-bottom: 16px; }
+        .face-before .hero p { font-size: 16px; color: #777; margin-bottom: 30px; }
+        .face-before .hero .btn { padding: 12px 28px; border: 1px solid #bbb; background: #d0d0d0; color: #555; font-size: 15px; text-decoration: none; }
+        .face-before .services { padding: 60px 40px; }
+        .face-before .section-title { text-align: center; font-size: 28px; color: #555; margin-bottom: 40px; }
+        .face-before .cards { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+        .face-before .card { background: #d5d5d5; border: 1px solid #bbb; padding: 30px 24px; width: 300px; text-align: center; }
+        .face-before .card-icon { font-size: 36px; margin-bottom: 16px; display: block; color: #888; }
+        .face-before .card h3 { font-size: 18px; color: #555; margin-bottom: 10px; }
+        .face-before .card p { font-size: 14px; color: #777; line-height: 1.5; }
+        .face-before .about { padding: 60px 40px; display: flex; gap: 40px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .face-before .visual { width: 280px; height: 280px; background: #ccc; border: 1px solid #bbb; display: flex; align-items: center; justify-content: center; }
+        .face-before .visual img { width: 120px; filter: grayscale(100%); }
+        .face-before .about-text { max-width: 480px; }
+        .face-before .about-text h2 { font-size: 26px; color: #555; margin-bottom: 16px; }
+        .face-before .about-text p { font-size: 15px; color: #777; line-height: 1.7; }
+        .face-before .footer { padding: 30px 40px; text-align: center; background: #d0d0d0; border-top: 1px solid #bbb; }
+        .face-before .footer p { font-size: 13px; color: #777; }
+
+        /* ========== AFTER FACE ========== */
+        .face-after .content { position: relative; z-index: 1; }
+        .face-after .navbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: rgba(10,22,40,0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,215,0,0.4); box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .face-after .logo { display: flex; align-items: center; gap: 10px; font-family: 'Cinzel', serif; font-size: 22px; background: linear-gradient(135deg, #00D4AA, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .face-after .logo img { height: 36px; }
+        .face-after .nav-links { list-style: none; display: flex; gap: 28px; }
+        .face-after .nav-links a { text-decoration: none; color: #ccc; font-size: 15px; position: relative; transition: color 0.3s; }
+        .face-after .nav-links a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0%; height: 2px; background: linear-gradient(90deg, #00D4AA, #FFD700); transition: width 0.3s; }
+        .face-after .nav-links a:hover { color: #00D4AA; }
+        .face-after .nav-links a:hover::after { width: 100%; }
+
+        .face-after .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 60px 20px; }
+        .face-after .hero h1 {
+            font-family: 'Cinzel', serif; font-size: 62px; line-height: 1.15; margin-bottom: 16px;
+            background: linear-gradient(135deg, #00D4AA 0%, #FFD700 50%, #00D4AA 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            animation: shineText 3s linear infinite;
+            filter: drop-shadow(0 0 30px rgba(0,212,170,0.3));
+        }
+        @keyframes shineText { to { background-position: 200% center; } }
+        .face-after .hero p { font-size: 20px; color: #bbb; margin-bottom: 30px; max-width: 650px; }
+        .face-after .hero .btn-group { display: flex; gap: 16px; }
+        .face-after .hero .btn { padding: 14px 36px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.3s; }
+        .face-after .hero .btn-primary { background: linear-gradient(135deg, #00D4AA, #00e6b8); color: #0a1628; box-shadow: 0 0 20px rgba(0,212,170,0.4); position: relative; overflow: hidden; }
+        .face-after .hero .btn-primary::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent, rgba(255,215,0,0.3), transparent); transform: rotate(45deg); animation: btnShine 2.5s infinite; }
+        @keyframes btnShine { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
+        .face-after .hero .btn-primary:hover { box-shadow: 0 0 50px rgba(255,215,0,0.6); transform: scale(1.05); }
+        .face-after .hero .btn-outline { background: transparent; border: 2px solid #00D4AA; color: #00D4AA; }
+        .face-after .hero .btn-outline:hover { background: rgba(0,212,170,0.15); transform: scale(1.05); }
+        .face-after .scroll-arrow { margin-top: 40px; color: #00D4AA; font-size: 32px; animation: bounceArrow 2s infinite; filter: drop-shadow(0 0 10px rgba(0,212,170,0.5)); }
+        @keyframes bounceArrow { 0%, 100% { transform: translateY(0); opacity: 0.5; } 50% { transform: translateY(14px); opacity: 1; } }
+
+        .face-after .services { padding: 60px 40px; }
+        .face-after .section-title { text-align: center; font-family: 'Cinzel', serif; font-size: 36px; color: #fff; margin-bottom: 40px; position: relative; display: inline-block; left: 50%; transform: translateX(-50%); }
+        .face-after .section-title::after { content: ''; display: block; width: 80px; height: 3px; background: linear-gradient(90deg, #00D4AA, #FFD700); margin: 12px auto 0; box-shadow: 0 0 10px rgba(255,215,0,0.4); }
+        .face-after .cards { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+        .face-after .card { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,215,0,0.15); border-radius: 20px; padding: 30px 24px; width: 300px; text-align: center; transition: all 0.3s; }
+        .face-after .card:hover { transform: translateY(-12px) scale(1.03); box-shadow: 0 20px 60px rgba(255,215,0,0.2); border-color: rgba(0,212,170,0.5); }
+        .face-after .card-icon { font-size: 48px; margin-bottom: 16px; display: block; color: #00D4AA; filter: drop-shadow(0 0 12px rgba(0,212,170,0.6)); }
+        .face-after .card h3 { font-family: 'Cinzel', serif; font-size: 20px; color: #fff; margin-bottom: 10px; }
+        .face-after .card p { font-size: 15px; color: #aaa; line-height: 1.5; }
+
+        .face-after .about { padding: 60px 40px; display: flex; gap: 40px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .face-after .visual { width: 280px; height: 280px; background: transparent; border: 2px solid rgba(0,212,170,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; animation: pulseRing 3s ease-in-out infinite; }
+        .face-after .visual::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: conic-gradient(from 0deg, transparent, rgba(0,212,170,0.2), transparent, rgba(255,215,0,0.2), transparent); animation: rotateBorder 4s linear infinite; }
+        @keyframes rotateBorder { to { transform: rotate(360deg); } }
+        @keyframes pulseRing { 0%, 100% { box-shadow: 0 0 30px rgba(0,212,170,0.2), inset 0 0 30px rgba(0,212,170,0.1); } 50% { box-shadow: 0 0 60px rgba(0,212,170,0.5), inset 0 0 50px rgba(0,212,170,0.2); } }
+        .face-after .visual img { width: 120px; filter: drop-shadow(0 0 20px rgba(0,212,170,0.6)); animation: floatLogo 4s ease-in-out infinite; }
+        @keyframes floatLogo { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.05); } }
+        .face-after .about-text { max-width: 480px; }
+        .face-after .about-text h2 { font-family: 'Cinzel', serif; font-size: 32px; background: linear-gradient(135deg, #00D4AA, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+        .face-after .about-text p { font-size: 16px; color: #bbb; line-height: 1.7; }
+
+        .face-after .footer { padding: 30px 40px; text-align: center; background: rgba(10,22,40,0.95); border-top: 2px solid transparent; border-image: linear-gradient(90deg, transparent, #00D4AA, #FFD700, #00D4AA, transparent) 1; }
+        .face-after .footer p { font-size: 13px; color: #bbb; }
+        .face-after .footer .tagline { font-size: 12px; margin-top: 6px; color: #888; font-style: italic; }
+        .face-after .footer .socials { display: flex; gap: 12px; justify-content: center; margin-top: 12px; }
+        .face-after .footer .socials a { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3); transition: all 0.3s; }
+        .face-after .footer .socials a:hover { background: rgba(0,212,170,0.3); box-shadow: 0 0 20px rgba(0,212,170,0.5); transform: scale(1.2); }
+        .face-after .footer .socials svg { fill: #00D4AA; width: 18px; height: 18px; }
     </style>
 </head>
 <body>
-
-    <!-- TOGGLE -->
-    <div class="toggle-container">
+    <div class="toggle-container" id="toggle-container">
         <span class="toggle-label active" id="label-before">BEFORE</span>
-        <div class="toggle-switch" id="toggle" onclick="toggleMode()">
-            <div class="toggle-knob"></div>
-        </div>
+        <div class="toggle-switch" id="toggle" onclick="toggleMode()"><div class="toggle-knob"></div></div>
         <span class="toggle-label" id="label-after">AFTER</span>
     </div>
 
-    <!-- FLASH OVERLAY -->
-    <div class="flash-overlay" id="flash-overlay"></div>
+    <div class="perspective-wrapper">
+        <div class="flip-container" id="flip-container">
 
-    <!-- DRAGON CANVAS -->
-    <canvas id="dragon-canvas"></canvas>
-
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <div class="logo">DuoCode Technology</div>
-        <ul class="nav-links">
-            <li><a href="#hero">Home</a></li>
-            <li><a href="#services">Services</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#footer">Contact</a></li>
-        </ul>
-    </nav>
-
-    <!-- HERO -->
-    <section class="hero" id="hero">
-        <h1>Welcome to DuoCode Technology</h1>
-        <p>We build websites for your business.</p>
-        <div class="btn-group">
-            <a href="#footer" class="btn">Contact Us</a>
-            <a href="#services" class="btn btn-secondary">See Our Work</a>
-        </div>
-        <div class="scroll-arrow">&#8595;</div>
-    </section>
-
-    <!-- SERVICES -->
-    <section class="services" id="services">
-        <h2 class="section-title">Our Services</h2>
-        <div class="cards">
-            <div class="card">
-                <span class="card-icon">&#9881;</span>
-                <h3>Web Design</h3>
-                <p>We design websites that capture your brand identity and engage your audience with modern aesthetics.</p>
+            <!-- BEFORE -->
+            <div class="face face-before">
+                <nav class="navbar">
+                    <div class="logo"><img src="logo_Duo_Code-remove-background.com.png" alt="DuoCode">DuoCode Technology</div>
+                    <ul class="nav-links"><li><a href="#">Home</a></li><li><a href="#">Services</a></li><li><a href="#">About</a></li><li><a href="#">Contact</a></li></ul>
+                </nav>
+                <section class="hero">
+                    <h1>Welcome to DuoCode Technology</h1>
+                    <p>We build websites for your business.</p>
+                    <a href="#" class="btn">Contact Us</a>
+                </section>
+                <section class="services">
+                    <h2 class="section-title">Our Services</h2>
+                    <div class="cards">
+                        <div class="card"><span class="card-icon">&#9881;</span><h3>Web Design</h3><p>We design websites that capture your brand identity and engage your audience with modern aesthetics.</p></div>
+                        <div class="card"><span class="card-icon">&#9000;</span><h3>Web Development</h3><p>Custom-built, high-performance websites using the latest technologies for speed and reliability.</p></div>
+                        <div class="card"><span class="card-icon">&#9733;</span><h3>Digital Solutions</h3><p>End-to-end digital strategies including SEO, analytics, and online marketing to grow your business.</p></div>
+                    </div>
+                </section>
+                <section class="about">
+                    <div class="visual"><img src="logo_Duo_Code-remove-background.com.png" alt="DuoCode Logo"></div>
+                    <div class="about-text"><h2>About DuoCode</h2><p>We are a Malaysian digital agency helping SMEs grow their online presence with modern, high-performance websites.</p></div>
+                </section>
+                <footer class="footer"><p>DuoCode Technology &copy; 2025</p></footer>
             </div>
-            <div class="card">
-                <span class="card-icon">&#9000;</span>
-                <h3>Web Development</h3>
-                <p>Custom-built, high-performance websites using the latest technologies for speed and reliability.</p>
-            </div>
-            <div class="card">
-                <span class="card-icon">&#9733;</span>
-                <h3>Digital Solutions</h3>
-                <p>End-to-end digital strategies including SEO, analytics, and online marketing to grow your business.</p>
-            </div>
-        </div>
-    </section>
 
-    <!-- ABOUT -->
-    <section class="about" id="about">
-        <div class="visual">
-            <span>&lt;/&gt;</span>
+            <!-- AFTER -->
+            <div class="face face-after">
+                <canvas id="fx-canvas"></canvas>
+                <div class="content">
+                    <nav class="navbar">
+                        <div class="logo"><img src="logo_Duo_Code-remove-background.com.png" alt="DuoCode">DuoCode Technology</div>
+                        <ul class="nav-links"><li><a href="#">Home</a></li><li><a href="#">Services</a></li><li><a href="#">About</a></li><li><a href="#">Contact</a></li></ul>
+                    </nav>
+                    <section class="hero">
+                        <h1>Transform Your Business Online</h1>
+                        <p>DuoCode builds websites that don't just look good — they work hard for your business.</p>
+                        <div class="btn-group">
+                            <a href="#" class="btn btn-primary">Get Started</a>
+                            <a href="#" class="btn btn-outline">See Our Work</a>
+                        </div>
+                        <div class="scroll-arrow">&#8595;</div>
+                    </section>
+                    <section class="services">
+                        <h2 class="section-title">Our Services</h2>
+                        <div class="cards">
+                            <div class="card"><span class="card-icon">&#9881;</span><h3>Web Design</h3><p>We design websites that capture your brand identity and engage your audience with modern aesthetics.</p></div>
+                            <div class="card"><span class="card-icon">&#9000;</span><h3>Web Development</h3><p>Custom-built, high-performance websites using the latest technologies for speed and reliability.</p></div>
+                            <div class="card"><span class="card-icon">&#9733;</span><h3>Digital Solutions</h3><p>End-to-end digital strategies including SEO, analytics, and online marketing to grow your business.</p></div>
+                        </div>
+                    </section>
+                    <section class="about">
+                        <div class="visual"><img src="logo_Duo_Code-remove-background.com.png" alt="DuoCode Logo"></div>
+                        <div class="about-text"><h2>About DuoCode</h2><p>We are a Malaysian digital agency helping SMEs grow their online presence with modern, high-performance websites. Our team combines creative design with technical excellence to deliver websites that don't just look good — they work hard for your business.</p></div>
+                    </section>
+                    <footer class="footer">
+                        <p>DuoCode Technology &copy; 2025</p>
+                        <p class="tagline">Empowering Malaysian SMEs, One Website at a Time.</p>
+                        <div class="socials">
+                            <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+                            <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="#00D4AA" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#00D4AA" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.5"/></svg></a>
+                        </div>
+                    </footer>
+                </div>
+            </div>
         </div>
-        <div class="text">
-            <h2>About DuoCode</h2>
-            <p>We are a Malaysian digital agency helping SMEs grow their online presence with modern, high-performance websites. Our team combines creative design with technical excellence to deliver websites that don't just look good — they work hard for your business.</p>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="footer" id="footer">
-        <p>DuoCode Technology &copy; 2025</p>
-        <p class="tagline">Empowering Malaysian SMEs, One Website at a Time.</p>
-        <div class="socials">
-            <a href="#" aria-label="Facebook">
-                <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-            </a>
-            <a href="#" aria-label="Instagram">
-                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="#00D4AA" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#00D4AA" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.5"/></svg>
-            </a>
-        </div>
-    </footer>
+    </div>
 
     <script>
-        /* ========== TOGGLE LOGIC ========== */
         let isAfterMode = false;
         let animationId = null;
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
 
+        function resizeCanvas() {
+            const parent = canvas.parentElement;
+            canvas.width = parent.offsetWidth;
+            canvas.height = parent.offsetHeight;
+        }
+        window.addEventListener('resize', () => { if (animationId) { resizeCanvas(); initColumns(); } });
+
+        /* ========== TOGGLE (3D FLIP) ========== */
         function toggleMode() {
             isAfterMode = !isAfterMode;
-            const toggle = document.getElementById('toggle');
+            const flipContainer = document.getElementById('flip-container');
+            const toggleEl = document.getElementById('toggle');
+            const toggleContainer = document.getElementById('toggle-container');
             const labelBefore = document.getElementById('label-before');
             const labelAfter = document.getElementById('label-after');
 
             if (isAfterMode) {
-                // Flash transition: Before → After
-                flashTransition(() => {
-                    document.body.classList.add('after-mode');
-                    toggle.classList.add('on');
-                    labelBefore.classList.remove('active');
-                    labelAfter.classList.add('active');
-                    updateHeroText(true);
-                    startDragon();
-                    observeSections();
-                });
+                flipContainer.classList.add('flipped');
+                toggleEl.classList.add('on');
+                toggleContainer.classList.add('on');
+                labelBefore.classList.remove('active');
+                labelAfter.classList.add('active');
+                startFX();
             } else {
-                // Fade transition: After → Before
-                document.body.classList.remove('after-mode');
-                toggle.classList.remove('on');
+                flipContainer.classList.remove('flipped');
+                toggleEl.classList.remove('on');
+                toggleContainer.classList.remove('on');
                 labelAfter.classList.remove('active');
                 labelBefore.classList.add('active');
-                updateHeroText(false);
-                stopDragon();
-                resetCards();
+                setTimeout(() => { stopFX(); }, 1300);
             }
         }
 
-        function updateHeroText(after) {
-            const h1 = document.querySelector('.hero h1');
-            const p = document.querySelector('.hero p');
-            const btn = document.querySelector('.hero .btn');
-            if (after) {
-                h1.textContent = 'Transform Your Business Online';
-                p.textContent = "DuoCode builds websites that don't just look good — they work hard for your business.";
-                btn.textContent = 'Get Started';
-            } else {
-                h1.textContent = 'Welcome to DuoCode Technology';
-                p.textContent = 'We build websites for your business.';
-                btn.textContent = 'Contact Us';
+        /* ========== MATRIX CODE RAIN (unchanged) ========== */
+        const columns = [];
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789<>/{}[]()=+-*&^%$#@!~|\\;:.,?アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+        const fontSize = 16;
+
+        function initColumns() {
+            const count = Math.ceil(canvas.width / fontSize);
+            columns.length = 0;
+            for (let i = 0; i < count; i++) {
+                columns.push({ x: i * fontSize, drops: [], nextSpawn: Math.random() * 60 });
             }
         }
 
-        /* ========== FLASH TRANSITION ========== */
-        function flashTransition(callback) {
-            const overlay = document.getElementById('flash-overlay');
-            const toggle = document.getElementById('toggle');
-            const rect = toggle.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-
-            overlay.style.background = `radial-gradient(circle at ${cx}px ${cy}px, rgba(255,215,0,0.9), rgba(255,255,255,0.8) 40%, transparent 70%)`;
-            overlay.style.transition = 'none';
-            overlay.style.opacity = '0';
-
-            requestAnimationFrame(() => {
-                overlay.style.transition = 'opacity 0.15s ease-in';
-                overlay.style.opacity = '1';
-
-                setTimeout(() => {
-                    callback();
-                    overlay.style.transition = 'opacity 0.45s ease-out';
-                    overlay.style.opacity = '0';
-                }, 150);
-            });
-        }
-
-        /* ========== INTERSECTION OBSERVER ========== */
-        function observeSections() {
-            const cards = document.querySelectorAll('.services .card');
-            const aboutEls = document.querySelectorAll('.about .visual, .about .text');
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry, i) => {
-                    if (entry.isIntersecting) {
-                        setTimeout(() => entry.target.classList.add('visible'), i * 150);
-                    }
-                });
-            }, { threshold: 0.2 });
-
-            cards.forEach(card => observer.observe(card));
-            aboutEls.forEach(el => observer.observe(el));
-        }
-
-        function resetCards() {
-            document.querySelectorAll('.card, .about .visual, .about .text').forEach(el => {
-                el.classList.remove('visible');
-            });
-        }
-
-        /* ========== DRAGON CANVAS ANIMATION ========== */
-        const canvas = document.getElementById('dragon-canvas');
-        const ctx = canvas.getContext('2d');
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        // Dragon state
-        const dragon = {
-            nodes: [],
-            nodeCount: 70,
-            time: 0,
-            speed: 0.008
-        };
-
-        // Ambient particles
-        const ambientParticles = [];
-        const AMBIENT_COUNT = 65;
-
-        function initAmbientParticles() {
-            ambientParticles.length = 0;
-            for (let i = 0; i < AMBIENT_COUNT; i++) {
-                ambientParticles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 2.5 + 0.5,
-                    speedY: -(Math.random() * 0.4 + 0.1),
-                    speedX: (Math.random() - 0.5) * 0.2,
-                    opacity: Math.random() * 0.6 + 0.2
-                });
-            }
-        }
-
-        function getDragonPosition(t) {
-            // Sinuous S-curve path across the screen
-            const x = ((t % 1) + 1) % 1 * (canvas.width + 400) - 200;
-            const baseY = canvas.height * 0.45;
-            const y = baseY + Math.sin(t * Math.PI * 4) * (canvas.height * 0.18)
-                             + Math.sin(t * Math.PI * 7) * (canvas.height * 0.06);
-            return { x, y };
-        }
-
-        function updateDragon() {
-            dragon.time += dragon.speed;
-
-            dragon.nodes = [];
-            for (let i = 0; i < dragon.nodeCount; i++) {
-                const offset = i * 0.012;
-                const pos = getDragonPosition(dragon.time - offset);
-                dragon.nodes.push(pos);
-            }
-        }
-
-        function drawDragon() {
-            const nodes = dragon.nodes;
-            if (nodes.length === 0) return;
-
-            for (let i = nodes.length - 1; i >= 0; i--) {
-                const node = nodes[i];
-                const progress = 1 - i / nodes.length; // 1 at head, 0 at tail
-                const size = 3 + progress * 8;
-                const alpha = 0.1 + progress * 0.7;
-
-                // Teal glow
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, size + 4, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 212, 170, ${alpha * 0.25})`;
-                ctx.fill();
-
-                // Teal body
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 212, 170, ${alpha})`;
-                ctx.fill();
-
-                // Gold core
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, size * 0.4, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
-                ctx.fill();
-            }
-
-            // Head extra glow
-            const head = nodes[0];
-            const gradient = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 30);
-            gradient.addColorStop(0, 'rgba(0, 212, 170, 0.4)');
-            gradient.addColorStop(0.5, 'rgba(255, 215, 0, 0.15)');
-            gradient.addColorStop(1, 'rgba(0, 212, 170, 0)');
-            ctx.beginPath();
-            ctx.arc(head.x, head.y, 30, 0, Math.PI * 2);
-            ctx.fillStyle = gradient;
-            ctx.fill();
-        }
-
-        function updateAmbientParticles() {
-            ambientParticles.forEach(p => {
-                p.y += p.speedY;
-                p.x += p.speedX;
-                if (p.y < -10) {
-                    p.y = canvas.height + 10;
-                    p.x = Math.random() * canvas.width;
-                }
-            });
-        }
-
-        function drawAmbientParticles() {
-            ambientParticles.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 215, 0, ${p.opacity})`;
-                ctx.fill();
-            });
+        function spawnDrop(col) {
+            const speed = Math.random() * 2 + 1.5;
+            const length = Math.floor(Math.random() * 25) + 8;
+            const isTeal = Math.random() > 0.25;
+            const dropChars = [];
+            for (let j = 0; j < length; j++) dropChars.push(chars[Math.floor(Math.random() * chars.length)]);
+            col.drops.push({ y: -fontSize * length, speed, chars: dropChars, length, isTeal, changeTimer: 0 });
         }
 
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(10, 22, 40, 0.12)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fontSize + 'px monospace';
 
-            updateAmbientParticles();
-            drawAmbientParticles();
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
+                col.nextSpawn--;
+                if (col.nextSpawn <= 0) { spawnDrop(col); col.nextSpawn = Math.random() * 80 + 20; }
 
-            updateDragon();
-            drawDragon();
+                for (let d = col.drops.length - 1; d >= 0; d--) {
+                    const drop = col.drops[d];
+                    drop.y += drop.speed;
+                    drop.changeTimer++;
+                    if (drop.changeTimer > 3) {
+                        drop.changeTimer = 0;
+                        drop.chars[Math.floor(Math.random() * drop.length)] = chars[Math.floor(Math.random() * chars.length)];
+                    }
 
+                    for (let j = 0; j < drop.length; j++) {
+                        const charY = drop.y + j * fontSize;
+                        if (charY < -fontSize || charY > canvas.height + fontSize) continue;
+                        const progress = j / drop.length;
+
+                        if (j === 0) {
+                            ctx.fillStyle = drop.isTeal ? 'rgba(255,255,255,0.95)' : 'rgba(255,215,0,1)';
+                            ctx.shadowColor = drop.isTeal ? '#00D4AA' : '#FFD700';
+                            ctx.shadowBlur = 15;
+                        } else if (j < 3) {
+                            const a = 0.9 - progress * 0.3;
+                            ctx.fillStyle = drop.isTeal ? `rgba(0,255,210,${a})` : `rgba(255,215,0,${a})`;
+                            ctx.shadowBlur = 0;
+                        } else {
+                            const a = Math.max(0, 0.6 - progress * 0.7);
+                            ctx.fillStyle = drop.isTeal ? `rgba(0,180,140,${a})` : `rgba(200,170,0,${a})`;
+                            ctx.shadowBlur = 0;
+                        }
+                        ctx.fillText(drop.chars[j], col.x, charY);
+                    }
+                    ctx.shadowBlur = 0;
+                    if (drop.y > canvas.height + fontSize * drop.length) col.drops.splice(d, 1);
+                }
+            }
             animationId = requestAnimationFrame(animate);
         }
 
-        function startDragon() {
+        function startFX() {
             if (animationId) return;
             resizeCanvas();
-            initAmbientParticles();
+            ctx.fillStyle = '#0a1628';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            initColumns();
             animate();
         }
 
-        function stopDragon() {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
+        function stopFX() {
+            if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     </script>
 </body>
